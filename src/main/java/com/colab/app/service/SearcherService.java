@@ -5,16 +5,14 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;;
 
-import com.colab.app.scrapper.ScrapperOperation;;
-
+@Service
 public class SearcherService {
-
-	private String token = "${scrapperful.accesstoken}";
+	
 	public SearcherService() {
 		
 	}
@@ -54,12 +52,10 @@ public class SearcherService {
 	private JSONObject resultsByPage(String q, int offset) throws Exception {
 		
 		URL url = new URL("https://api.mercadolibre.com/sites/MLA/search?q="+q+"&condition=new&shipping=fulfillment&offset="+offset);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestProperty("Authorization","Bearer " + "${scrapperful.accesstoken}");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();                
         conn.setRequestProperty("Content-Type","application/json");
         conn.setRequestProperty("Accept","application/json");
-        conn.setRequestMethod("GET");
-        
+        conn.setRequestMethod("GET");        
         BufferedReader br = null;
         if (100 <= conn.getResponseCode() && conn.getResponseCode() <= 399) {
             br = new BufferedReader(new InputStreamReader(conn.getInputStream()));

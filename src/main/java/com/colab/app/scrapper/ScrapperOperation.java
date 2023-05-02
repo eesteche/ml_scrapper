@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.Resource;
@@ -37,14 +36,15 @@ public class ScrapperOperation {
 	private HistoryRepository hRepo;
 	@Autowired
 	GeneralUtils utils;
+	@Autowired
+	SearcherService finder;
 
 	Logger logger = LoggerFactory.getLogger(ScrapperOperation.class);
 
 	@Scheduled(initialDelay = 5000L, fixedRateString = "${scrapperful.Delay}")
 	@Transactional
 	public void init() {
-		logger.info("Starts scrap operation");
-		SearcherService finder = new SearcherService();
+		logger.info("Starts scrap operation");		
 		List<QueryList> queryList = qRepo.findAll();
 		logger.info("QueryList: " + String.join(",", queryList.toString()));
 		for (QueryList q : queryList) {
