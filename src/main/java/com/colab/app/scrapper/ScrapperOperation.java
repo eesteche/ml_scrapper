@@ -54,6 +54,9 @@ public class ScrapperOperation {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+			if(aux == null) {
+				return;
+			}
 			List<Item> itemList = JsonToItem(aux);
 			logger.info("Founded: " + itemList.size() + " on query: " + q.getQ());
 			SaveScrapResults(itemList, q);
