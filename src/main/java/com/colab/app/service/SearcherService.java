@@ -55,7 +55,7 @@ public class SearcherService {
 		
 		URL url = new URL("https://api.mercadolibre.com/sites/MLA/search?q="+q+"&condition=new&shipping=fulfillment&offset="+offset);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestProperty("Authorization","Bearer APP_USR-1529890685303872-042018-419329e161b1ee183651f662b33e6a38-67860967");
+        conn.setRequestProperty("Authorization","Bearer " + "${scrapperful.accesstoken}");
         conn.setRequestProperty("Content-Type","application/json");
         conn.setRequestProperty("Accept","application/json");
         conn.setRequestMethod("GET");
