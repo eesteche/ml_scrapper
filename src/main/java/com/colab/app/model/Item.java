@@ -19,6 +19,10 @@ import javax.persistence.OneToMany;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 public class Item {
 
@@ -62,6 +66,7 @@ public class Item {
 	private java.util.Date baja_fecha;
 	private java.util.Date modi_fecha;
 
+	@JsonBackReference
 	@OneToMany(mappedBy = "item", fetch = FetchType.LAZY, cascade = CascadeType.ALL)	
 	private List<History> history;
 
@@ -87,6 +92,7 @@ public class Item {
 		
 	}
 	
+	@JsonIgnore
 	@ManyToMany(mappedBy = "item")
     Set<QueryList> queryList;
 	

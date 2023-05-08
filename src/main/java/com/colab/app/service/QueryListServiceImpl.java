@@ -28,8 +28,7 @@ public class QueryListServiceImpl implements QueryListService {
 	}
 
 	@Override
-	public QueryList addQueryList(QueryList q) {
-		
+	public QueryList addQueryList(QueryList q) {		
 		QueryList savedQ = qRepo.save(q);
 		return savedQ;
 	}

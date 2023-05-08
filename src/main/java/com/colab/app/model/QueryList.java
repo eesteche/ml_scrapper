@@ -5,12 +5,15 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class QueryList {
@@ -26,12 +29,20 @@ public class QueryList {
 	private java.util.Date baja_fecha;
 	private java.util.Date modi_fecha;
 	
-		
-	@ManyToMany
+	
+	@JsonIgnore
+	@ManyToMany()
 	@JoinTable(name = "query_list_item", 
     joinColumns = { @JoinColumn(name = "query_list_id") }, 
     inverseJoinColumns = { @JoinColumn(name = "item_db_id") })		
     Set<Item> item;
+	
+	public QueryList() {
+		
+	}
+	public QueryList(String q) {
+		this.q = q;
+	}
 	//*********************************GETTERS&SETTERS*********************************//
 	
 	public void addItem(Item item) {

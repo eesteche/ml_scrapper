@@ -9,6 +9,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 @Entity
 public class History {
 
@@ -18,8 +21,8 @@ public class History {
 	
 	@Column(nullable=false, length=200)
 	private String q;
-		
-	@ManyToOne(fetch = FetchType.LAZY)
+			
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "db_id")
 	private Item item;	
 	
@@ -35,6 +38,10 @@ public class History {
 		this.precio_viejo = precio_viejo;
 		this.precio_nuevo = precio_nuevo;
 		this.alta_fecha = alta_fecha;
+	}
+	
+	public History() {
+		
 	}
 	
 	//*********************************GETTERS&SETTERS*********************************//
