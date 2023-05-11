@@ -127,9 +127,9 @@ public class ScrapperOperation {
 		logger.info(cantidadNueva + " new Items. Now saving.");
 		logger.info(itemsActual.size() + "");
 		
-		for (Item scrappedItem : lastScrap) {
+		for (Item scrappedItem : lastScrap) {			
 			String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-			logger.info(scrappedItem.getIdml());
+			logger.debug(scrappedItem.getIdml());
 			
 			//TODO este segundo acceso a la bbdd es necesario (aunque no querido) porque al ser muy grande la bbdd de ML, el scaneo se hace por "sectores" (querylist)
 			//Esto genera que un item pueda ser nuevo en una querylist (se cambia el titulo y ahora es un resultado en la busqueda) pero no nuevo en la BBDD (pertenece a otra querylist
@@ -142,7 +142,7 @@ public class ScrapperOperation {
 			if (itemActual != null) {
 				scrappedItem.setQueryList(itemActual.getQueryList());
 				if (!scrappedItem.getQueryList().contains(q)) {
-					scrappedItem.addQueryList(q);
+					//scrappedItem.addQueryList(q);
 				}
 			} else {
 				scrappedItem.setQueryList(new HashSet<>());

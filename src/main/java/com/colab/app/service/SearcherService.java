@@ -43,7 +43,7 @@ public class SearcherService {
         	totalResults = totalResults -50;
         }
         logger.info("Resultados totales: " + jsonObj.getJSONArray("results").length());
-        logger.info("Devuelvo: " +jsonObj.toString());
+        logger.debug("Devuelvo: " +jsonObj.toString());
 		return jsonObj;
 		
 		

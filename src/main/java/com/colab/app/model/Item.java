@@ -93,8 +93,13 @@ public class Item {
 	}
 	
 	@JsonIgnore
-	@ManyToMany(mappedBy = "item")
-    Set<QueryList> queryList;
+	@ManyToMany(fetch = FetchType.LAZY,
+		      cascade = {
+		              CascadeType.PERSIST,
+		              CascadeType.MERGE
+		          },
+		          mappedBy = "item")
+    Set<QueryList> queryList = new HashSet<>();;
 	
 	// *********************************GETTERS&SETTERS*********************************//
 
@@ -146,22 +151,6 @@ public class Item {
 
 	public void setQueryList(Set<QueryList> queryList) {
 		this.queryList = queryList;
-	}
-
-	public void addQueryList(QueryList q) {
-		this.queryList.add(q);
-		q.getItem().add(this);
-	}
-
-	public void removeQueryList(QueryList q) {
-		this.getQueryList().remove(q);
-		q.getItem().remove(this);
-	}
-	
-	public void removeQueryLists() {
-		for (QueryList q : new HashSet<>(queryList)) {
-			removeQueryList(q);
-		}
 	}
 	
 	public List<History> getHistory() {
