@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
 import javax.transaction.Transactional;
@@ -18,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.colab.app.dto.MeliCategoryDto;
 import com.colab.app.model.History;
 import com.colab.app.model.Item;
 import com.colab.app.model.QueryList;
@@ -41,10 +44,41 @@ public class ScrapperOperation {
 
 	Logger logger = LoggerFactory.getLogger(ScrapperOperation.class);
 
-	@Scheduled(initialDelay = 5000L, fixedRateString = "${scrapperful.Delay}")
 	@Transactional
+	@Scheduled(initialDelay = 5000L, fixedRateString = "${scrapperful.Delay}")	
 	public void init() {
-		logger.info("Starts scrap operation");		
+		logger.info("Starts scrap operation");	
+		logger.info("Finding categories...");
+		JSONArray categoriesArray = new JSONArray();
+		List<MeliCategoryDto> categories = new ArrayList<MeliCategoryDto>();
+		try {
+			categoriesArray = finder.getCategories();
+		} catch (Exception e1) {
+			logger.error(e1.getMessage());
+			e1.printStackTrace();
+		}		
+		if(categoriesArray.length() > 0) {
+			categories = finder.getCategoriesFromJson(categoriesArray);
+		}
+		int count = 0;
+		if(categories.size() > 0) {
+			for(MeliCategoryDto dto : categories) {
+				count++;
+				List<Item> aux = new ArrayList<Item>();
+				try {
+					aux.addAll(finder.searchItemByCategory(dto.getId().trim()));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				if(aux.size() < 1) {
+					continue;
+				}				
+				logger.info("Founded: " + aux.size() + " on query: " + dto.getName() + " . " + count + " / " + categories.size() + " done.");
+				SaveScrapResults(aux, dto.getName());
+			}
+			logger.info("Categories done.");
+		}
+		
 		List<QueryList> queryList = qRepo.findAll();
 		logger.info("QueryList: " + String.join(",", queryList.toString()));
 		for (QueryList q : queryList) {
@@ -57,52 +91,16 @@ public class ScrapperOperation {
 			if(aux == null) {
 				return;
 			}
-			List<Item> itemList = JsonToItem(aux);
+			List<Item> itemList = finder.JsonToItem(aux);
 			logger.info("Founded: " + itemList.size() + " on query: " + q.getQ());
 			SaveScrapResults(itemList, q);
 		}
+		
+		logger.info("Operation done.");
 	}
-
-	private List<Item> JsonToItem(JSONObject json) {
-		List<Item> itemList = new ArrayList<Item>();
-
-		json.keySet().forEach(keyStr -> {
-			if (keyStr.equals("results")) {
-
-				JSONArray results = json.getJSONArray("results");
-				if (results.length() == 0) {
-					return;
-				}
-
-				for (int i = 0; i < results.length(); i++) {
-					JSONObject obj1 = results.getJSONObject(i);
-					String id = obj1.getString("id");					
-					String title = obj1.getString("title");
-					String thumbnail_id = obj1.getString("thumbnail_id");
-					String catalog_product_id = obj1.isNull("catalog_product_id") ? "" : obj1.getString("catalog_product_id");
-					String permalink = obj1.getString("permalink");
-					String category_id = obj1.getString("category_id");
-					String domain_id = obj1.getString("domain_id");
-					String thumbnail = obj1.getString("thumbnail");
-					double price = obj1.isNull("price") ? 0.00 : obj1.getDouble("price");
-					double original_price = obj1.isNull("original_price") ? 0.00 : obj1.getDouble("original_price");
-					double sale_price = obj1.isNull("sale_price") ? 0.00 : obj1.getDouble("sale_price");
-					int sold_quantity = obj1.getInt("sold_quantity");
-					int available_quantity = obj1.getInt("available_quantity");
-
-					Item aux = new Item(id, title, thumbnail_id, catalog_product_id, permalink, category_id, domain_id,
-							thumbnail, price, original_price, sale_price, sold_quantity, available_quantity);
-					itemList.add(aux);
-				}
-			}
-
-		});
-		return itemList;
-
-	}
-
+		
 	private void SaveScrapResults(List<Item> lastScrap, QueryList q) {
-		logger.info("Saving: " + q.getQ() + "... ");
+		logger.info("SaveScrapResults(Querylist): Saving: " + q.getQ() + "... ");
 		int cantidadNueva;
 						
 		Set<Item> itemsActual = iRepo.findByQueryList(q);
@@ -121,15 +119,13 @@ public class ScrapperOperation {
 		
 		cantidadNueva = lastScrapSet.size();
 		if (cantidadNueva == 0) {
-			logger.info("No new items.");
+			logger.info("SaveScrapResults(QueryList): No new items.");
 			return;
 		}		
-		logger.info(cantidadNueva + " new Items. Now saving.");
-		logger.info(itemsActual.size() + "");
+		logger.info("SaveScrapResults(Querylist):" + cantidadNueva + " new Items. Now saving. Items on DB: " + itemsActual.size());
 		
-		for (Item scrappedItem : lastScrap) {			
+		for (Item scrappedItem : lastScrapSet) {			
 			String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-			logger.debug(scrappedItem.getIdml());
 			
 			//TODO este segundo acceso a la bbdd es necesario (aunque no querido) porque al ser muy grande la bbdd de ML, el scaneo se hace por "sectores" (querylist)
 			//Esto genera que un item pueda ser nuevo en una querylist (se cambia el titulo y ahora es un resultado en la busqueda) pero no nuevo en la BBDD (pertenece a otra querylist
@@ -168,7 +164,58 @@ public class ScrapperOperation {
 			}			
 		}
 
-		logger.info("Saved: " + lastScrap.size() + " Items");		
+		logger.info("SaveScrapResults(QueryList): Saved: " + lastScrap.size() + " Items");		
 	}
+		
+	private void SaveScrapResults(List<Item> lastScrap, String category) {
+		logger.info("SaveScrapResults(category): Saving: category: " + category + "... ");
+		int cantidadNueva;
+		
+		List<String> idList = lastScrap.stream().map(Item::getIdml).collect(Collectors.toList());
+		Set<Item> itemsActual = iRepo.findByIdmlIn(idList);
+				
+		Set<Item> aux = new HashSet<Item>(itemsActual);
+		Set<Item> lastScrapSet = new HashSet<Item>(lastScrap);
+		
+		aux.retainAll(lastScrap);				
+		lastScrapSet.removeAll(aux);
+		
+		cantidadNueva = lastScrapSet.size();
+		if (cantidadNueva == 0) {
+			logger.info("SaveScrapResults(category): No new items.");
+			return;
+		}		
+		logger.info("SaveScrapResults(category):" + cantidadNueva + " new Items. Now saving. Items on current db: " + itemsActual.size());		
+		
+		for (Item scrappedItem : lastScrapSet) {
+			String date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());								
 
+			//TODO este segundo acceso a la bbdd es necesario (aunque no querido) esta vez ocurre porque al estar guardando muchos items. No podemos confiar en el get inicial a la DB
+			//Esto se debe a que al estar en un proceso transaccional, los items guardados al inicio no serán grabados hasta terminar la transaccion. LO que puede generar que items que 
+			//compartan la categoria esten en 2 procesos de guardados simultaneos. (uno esperando en cola para ser grabado y otro concurrente)
+			Item itemActual = iRepo.findByIdml(scrappedItem.getIdml());
+			
+			double precio_viejo = itemActual == null ? 0.00 : itemActual.getPrice();
+			double precio_nuevo = scrappedItem.getPrice();
+			scrappedItem.setAlta_fecha(utils.parseTimestamp(date));						
+
+			if(precio_viejo != precio_nuevo) {
+				History h = new History(category, scrappedItem, precio_viejo, precio_nuevo, utils.parseTimestamp(date));
+				hRepo.save(h);
+			}						
+						
+			if (itemActual == null) {
+				iRepo.save(scrappedItem);
+
+			} else {
+				scrappedItem.setDb_id(itemActual.getDb_id());
+				scrappedItem.setModi_fecha(utils.parseTimestamp(date));
+				iRepo.save(scrappedItem);
+			}
+	
+		}
+
+		logger.info("SaveScrapResults(Category): Saved: " + lastScrap.size() + " Items");		
+	}
+	
 }
