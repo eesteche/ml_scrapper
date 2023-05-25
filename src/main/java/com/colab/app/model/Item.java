@@ -56,6 +56,9 @@ public class Item {
 	@Column(nullable = false, length = 225)
 	private String thumbnail;
 
+	@Column(nullable = false, length = 225)
+	private String model;
+	
 	private double price;
 	private double original_price;
 	private double sale_price;
@@ -72,7 +75,7 @@ public class Item {
 
 	public Item(String id, String title, String thumbnail_id, String catalog_product_id, String permalink,
 			String category_id, String domain_id, String thumbnail, double price, double original_price,
-			double sale_price, int sold_quantity, int available_quantity) {
+			double sale_price, int sold_quantity, int available_quantity, String model) {
 		this.idml = id;
 		this.title = title;
 		this.thumbnail_id = thumbnail_id;
@@ -86,6 +89,7 @@ public class Item {
 		this.sale_price = sale_price;
 		this.sold_quantity = sold_quantity;
 		this.available_quantity = available_quantity;
+		this.model = model;
 	}
 	
 	public Item() {
@@ -144,6 +148,14 @@ public class Item {
 
 
 	
+	public String getModel() {
+		return model;
+	}
+
+	public void setModel(String model) {
+		this.model = model;
+	}
+
 	public Set<QueryList> getQueryList() {
 		return queryList;
 	}

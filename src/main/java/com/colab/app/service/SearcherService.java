@@ -90,7 +90,7 @@ public class SearcherService {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
-				if (aux != null) {					
+				if (aux != null) {
 					items.addAll(JsonToItem(aux));
 					logger.debug("searchItemByCategory: " + items.size() + " Items added on URL: " + url.toString());
 				}
@@ -106,7 +106,7 @@ public class SearcherService {
 
 		logger.info("searchItemByCategory(String " + q + "): Resultados totales: " + items.size());
 		List<Item> returns = new ArrayList<Item>(items);
-		
+
 		items.clear();
 		return returns;
 
@@ -237,11 +237,11 @@ public class SearcherService {
 	public List<URL> getDownloadList(int totalResults, int offset, String q) throws MalformedURLException {
 		List<URL> urlList = new CopyOnWriteArrayList<URL>();
 		logger.debug(4.1 + " totalResults: " + totalResults + " offset: " + offset + " q: " + q);
-		while (totalResults % 50 > 0 && offset <= 1000) {			
+		while (totalResults % 50 > 0 && offset <= 1000) {
 			URL url = new URL("https://api.mercadolibre.com/sites/MLA/search?category=" + q
 					+ "&condition=new&shipping=fulfillment&offset=" + offset);
 			urlList.add(url);
-			offset = offset + 50;						
+			offset = offset + 50;
 		}
 		return urlList;
 	}
@@ -273,9 +273,10 @@ public class SearcherService {
 					double sale_price = obj1.isNull("sale_price") ? 0.00 : obj1.getDouble("sale_price");
 					int sold_quantity = obj1.getInt("sold_quantity");
 					int available_quantity = obj1.getInt("available_quantity");
+					String model = getModel(obj1);
 
 					Item aux = new Item(id, title, thumbnail_id, catalog_product_id, permalink, category_id, domain_id,
-							thumbnail, price, original_price, sale_price, sold_quantity, available_quantity);
+							thumbnail, price, original_price, sale_price, sold_quantity, available_quantity, model);
 					itemList.add(aux);
 				}
 			}
@@ -283,5 +284,29 @@ public class SearcherService {
 		});
 		return itemList;
 
+	}
+
+	private String getModel(JSONObject obj1) {
+		String model = "";
+
+		for (String s : obj1.keySet()) {
+			if (s.equals("attributes")) {
+				JSONArray attributes = obj1.getJSONArray("attributes");
+				if (attributes.length() == 0) {
+					return model;
+				}
+				for (int i = 0; i < attributes.length(); i++) {
+					JSONObject obj2 = attributes.getJSONObject(i);					
+					if (!obj2.getString("id").equals("MODEL")) {
+						continue;
+					}
+					if(obj2.isNull("value_name") || obj2.getString("value_name").equals("-1")) {
+						continue;
+					}
+					model = obj2.getString("value_name");
+				}
+			}
+		}
+		return model;
 	}
 }
